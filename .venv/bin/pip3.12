@@ -1,4 +1,6 @@
-#!/home/victor/Desktop/projects/Icarus-System/.venv/bin/python
+#!/bin/sh
+'''exec' "/home/victor/Área de trabalho/projects/Icarus-System/.venv/bin/python" "$0" "$@"
+' '''
 # -*- coding: utf-8 -*-
 import re
 import sys

@@ -72,6 +72,6 @@ def main(page: ft.Page):
             await asyncio.sleep(1)
 
     # Start the periodic update task
-    asyncio.create_task(periodic_update())
+    page.on_mount = lambda : asyncio.create_task(periodic_update())
 
 ft.app(target=main)

@@ -2,6 +2,7 @@ import flet as ft
 import player
 import asyncio
 
+
 def main(page: ft.Page):
     page.title = "Status"
     page.theme_mode = ft.ThemeMode.DARK

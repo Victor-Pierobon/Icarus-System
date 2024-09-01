@@ -1,78 +1,46 @@
 import flet as ft
 import player
-import asyncio
-
 
 def main(page: ft.Page):
-    page.title = "Status"
-    page.theme_mode = ft.ThemeMode.DARK
-    page.padding = 50
-    page.horizontal_alignment = ft.CrossAxisAlignment.CENTER
+    page.title = "Player Status"
+    page.padding = ft.padding.all(20)
 
-    player_name = "Demon King 97"
-    player_data = player.player_data.get(player_name, {})
+    player_name = ft.TextField(label="Enter Player Name")
 
-    # Create controls for displaying player data
-    name_text = ft.Text(f"NAME: {player_name}", style=ft.TextStyle(weight=ft.FontWeight.BOLD))
-    level_text = ft.Text(f"LEVEL: {player_data.get('level', 1)}", style=ft.TextStyle(weight=ft.FontWeight.BOLD), text_align=ft.TextAlign.RIGHT)
-    job_text = ft.Text("JOB: NONE", style=ft.TextStyle(weight=ft.FontWeight.BOLD))
-    hp_text = ft.Text(f"HP: {player_data.get('hp', 100)}", style=ft.TextStyle(weight=ft.FontWeight.BOLD))
-    mp_text = ft.Text(f"MP: {player_data.get('mp', 100)}", style=ft.TextStyle(weight=ft.FontWeight.BOLD))
-    strength_text = ft.Text(f"STRENGTH: {player_data.get('strenght', 1)}", style=ft.TextStyle(weight=ft.FontWeight.BOLD))
-    vitality_text = ft.Text(f"VITALITY: {player_data.get('vitality', 1)}", style=ft.TextStyle(weight=ft.FontWeight.BOLD), text_align=ft.TextAlign.RIGHT)
-    agility_text = ft.Text(f"AGILITY: {player_data.get('agility', 1)}", style=ft.TextStyle(weight=ft.FontWeight.BOLD))
-    inteligence_text = ft.Text(f"INTELLIGENCE: {player_data.get('inteligence', 1)}", style=ft.TextStyle(weight=ft.FontWeight.BOLD), text_align=ft.TextAlign.RIGHT)
-    remaining_points_text = ft.Text(f"REMAINING POINTS: {player_data.get('remaining_points', 0)}", style=ft.TextStyle(weight=ft.FontWeight.BOLD))
+    def display_player_info(e):
+        player_name_value = player_name.value
+        if player_name_value:
+            conn, cursor = player.create_connection()
+            player_data = player.get_player_data(conn, cursor, player_name_value)
+            conn.close()
 
-    # Create progress bars
-    hp_progress_bar = ft.ProgressBar(value=player_data.get('hp', 100) / 100, color=ft.colors.RED, width=200)
-    mp_progress_bar = ft.ProgressBar(value=player_data.get('mp', 100) / 100, color=ft.colors.BLUE, width=200)
+            if player_data:
+                page.add(
+                    ft.Column(
+                        [
+                            ft.Text(f"Name: {player_data['name']}", size=20),
+                            ft.Text(f"Level: {player_data['level']}"),
+                            ft.Text(f"HP: {player_data['hp']}"),
+                            ft.Text(f"MP: {player_data['mp']}"),
+                            ft.Text(f"Job: {player_data['job']}"),
+                            ft.Text(f"Experience: {player_data['experience']}"),
+                            ft.Text(f"Experience to Next Level: {player_data['experience_to_next_level']}"),
+                            ft.Text(f"Strength: {player_data['strenght']}"),
+                            ft.Text(f"Vitality: {player_data['vitality']}"),
+                            ft.Text(f"Agility: {player_data['agility']}"),
+                            ft.Text(f"Intelligence: {player_data['inteligence']}"),
+                            ft.Text(f"Status Points: {player_data['status_points']}"),
+                        ]
+                    )
+                )
+            else:
+                page.snack_bar = ft.SnackBar(ft.Text("Player not found!"))
+                page.snack_bar.open = True
+                page.update()
 
-    # Create the status card
-    status_card = ft.Card(
-        content=ft.Column(
-            [
-                ft.Text("STATUS", style=ft.TextStyle(weight=ft.FontWeight.BOLD, size=24)),
-                ft.Divider(),
-                ft.Row([name_text, level_text]),
-                ft.Row([job_text]),
-                ft.Row([hp_text, hp_progress_bar]),
-                ft.Row([mp_text, mp_progress_bar]),
-                ft.Divider(),
-                ft.Row([strength_text, vitality_text]),
-                ft.Row([agility_text, inteligence_text]),
-                ft.Divider(),
-                remaining_points_text,
-            ]
-        )
+    page.add(
+        player_name,
+        ft.ElevatedButton("Show Player Info", on_click=display_player_info)
     )
-
-    page.add(status_card)
-
-    # Function to update the player data and UI
-    async def update_player_data():
-        nonlocal player_data, name_text, level_text, hp_text, mp_text, strength_text, vitality_text, agility_text, inteligence_text, remaining_points_text, hp_progress_bar, mp_progress_bar
-        player_data = player.player_data.get(player_name, {})
-        name_text.value = f"NAME: {player_name}"
-        level_text.value = f"LEVEL: {player_data.get('level', 1)}"
-        hp_text.value = f"HP: {player_data.get('hp', 100)}"
-        mp_text.value = f"MP: {player_data.get('mp', 100)}"
-        strength_text.value = f"STRENGTH: {player_data.get('strenght', 1)}"
-        vitality_text.value = f"VITALITY: {player_data.get('vitality', 1)}"
-        agility_text.value = f"AGILITY: {player_data.get('agility', 1)}"
-        inteligence_text.value = f"INTELLIGENCE: {player_data.get('inteligence', 1)}"
-        remaining_points_text.value = f"REMAINING POINTS: {player_data.get('remaining_points', 0)}"
-        hp_progress_bar.value = player_data.get('hp', 100) / 100
-        mp_progress_bar.value = player_data.get('mp', 100) / 100
-        page.update()
-
-    # Run the update function every second
-    async def periodic_update():
-        while True:
-            await update_player_data()
-            await asyncio.sleep(1)
-
-    # Start the periodic update task
-    page.on_mount = lambda : asyncio.create_task(periodic_update())
 
 ft.app(target=main)

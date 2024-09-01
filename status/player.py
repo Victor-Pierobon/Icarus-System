@@ -1,66 +1,143 @@
-import json
+import sqlite3
 import math
 
-try:
-    with open("player_data.json", "r") as f:
-        player_data = json.load(f)
-except FileNotFoundError:
-    player_data = {}
-    
+def create_connection():
+    """Creates a new datavase connection"""
+    conn = sqlite3.connect("player_data.db")
+    cursor = conn.cursor()
+    return conn, cursor
 
-def save_player_data():
-    """Save the data of the player to a json file"""
-    with open ("player_data.json", "w") as f:
-        json.dump(player_data, f)
+conn = sqlite3.connect("player_data.db")
+cursor = conn.cursor()
+
+cursor.execute("""
+    CREATE TABLE IF NOT EXISTS players (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        level INTEGER,
+        hp INTEGER,
+        mp INTEGER,
+        job TEXT,
+        experience INTEGER,
+        experience_to_next_level INTEGER,
+        strenght INTEGER,
+        vitality INTEGER,
+        agility INTEGER,
+        inteligence INTEGER,
+        status_points INTEGER
+    )
+""")
+conn.commit()
+conn.close()
 
 
-def create_new_player(player_name):
+
+
+
+def create_new_player(conn, cursor, player_name):
     """Creates a new player at level 1"""
-    if player_name not in player_data:
-        player_data[player_name] = {
-            "level": 1,
-            "hp": 100,
-            "mp": 100,
-            "job": "none",
-            "experience": 0,
-            "experience_to_next_level": 100,
-            "strenght": 1,
-            "vitality": 1,
-            "agility": 1,
-            "inteligence": 1,
-            "remaining_points": 0,
+    conn, cursor = create_connection()
+    try:
+        cursor.execute(
+            """
+            INSERT INTO players (name, level, hp, mp, job, experience, experience_to_next_level, strenght, vitality, agility, inteligence, status_points)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (player_name, 1, 100, 100, "none", 0, 100, 1, 1, 1, 1, 0),
+        )
+        conn.commit()
+        print(f"Welcome '{player_name}'!")
+    except sqlite3.IntegrityError:
+        print(f"Player '{player_name}' already exists.")
 
-        }
-        save_player_data()
-        print(f"Welcome '{player_name}'")
-    else:
-        print(f"It can only be one player")
+def get_player_data(conn, cursor, player_name):
+    """Retrives player data from the database."""
+    conn, cursor = create_connection()
+    try:
+        cursor.execute("SELECT * FROM players WHERE name = ?", (player_name))
+        player_name = cursor.fetchone()
+        if player_data:
+            return {
+                "id": player_data[0],
+                "name": player_data[1],
+                "level": player_data[2],
+                "hp": player_data[3],
+                "mp": player_data[4],
+                "job": player_data[5],
+                "experience": player_data[6],
+                "experience_to_next_level": player_data[7],
+                "strenght": player_data[8],
+                "vitality": player_data[9],
+                "agility":player_data[10],
+                "inteligence": player_data[11],
+                "status_points": player_data[12],
+            }
+        else:
+            return None
+    finally:
+        conn.close()
 
-def gain_experience(player_name, experience):
+def save_player_data(conn, cursor, player_data):
+    """Updates player data in database."""
+    cursor.execute(
+        """
+        UPDATE players SET
+            level = ?,
+            hp = ?,
+            mp - ?,
+            job = ?.
+            experience = ?,
+            experience_to_next_level = ?,
+            strenght = ?,
+            vitality = ?,
+            agility = ?,
+            inteligence = ?,
+            status_points = ?,
+        WHERE id = ?
+        """,
+        (
+            player_data["level"],
+            player_data["hp"],
+            player_data["mp"],
+            player_data["job"],
+            player_data["experience"],
+            player_data["experience_to_next_level"],
+            player_data["strenght"],
+            player_data["vitality"],
+            player_data["agility"],
+            player_data["inteligence"],
+            player_data["status_points"],
+            player_data["id"],
+        ),
+    )
+    conn.commit()
+
+
+def gain_experience(conn, cursor, player_name, experience):
     """Adds experience to the player and levels them up if needed."""
-    if player_name in player_data:
-        player = player_data[player_name]
-        player[experience] += experience
-        while player["experience"] >= player["experience_to_next_level"]:
-            player["level"] +=1
-            player["experience"] -= player["experience_to_next_level"]
-            player["experience_to_next_level"] = math.ceil(player["experience_to_next_level"] *1.05) # Increase exp needed for next level
-            player["remaining_points"] += 2
-            print(f"LEVEL UP! \nLevel{player['level']}" )
-        save_player_data()
+    player_data = get_player_data(conn, cursor, player_name)
+    if player_data:
+        player_data["experience"] += experience
+        while player_data["experience"] >= player_data["experience_to_next_level"]:
+            player_data["level"] += 1
+            player_data["experience"] -= player_data["experience_to_next_level"]
+            player_data["experience_to_next_level"] = math.ceil(player_data["experience_to_next_level"] * 1.05)
+            player_data["remaining_points"] += 2
+            print(f"LEVEL UP! \nlevel {player_data['level']}")
+        save_player_data(conn, curosr, player_data)
     else:
         print(f"The System don't recognise this player")
+
     
 def allocate_stat_points(player_name, stat, points):
     """Allocates stat points to a stat of the player"""
-    if player_name in player_data:
-        player = player_data[player_name]
-        if player ["remaining_points"] >= points:
-            player[stat] += points
-            player ["remaining_points"] -= points
-            save_player_data()
-            print(f"points allocatedd successfully!")
+    player_data = get_player_data(conn, cursor, player_name)
+    if player_data:
+        if player_data["status_points"] >= points:
+            player_data[stat] += points
+            player_data["status_points"] -= points
+            save_player_data(conn, cursor, player_data)
         else:
-            print(f"The player dosen't have enough points.")
+            print(f"The player dpsen't ahve enough points.")
     else:
-        print(f"The System don't recognise this player")
+        print(f"the System don't recognise this player")

@@ -4,3 +4,9 @@ venv/
 
 # Python bytecode cache
 __pycache__/
+status/__pycache__/
+habits/__pycache__/
+
+# Ignore pycache within any subdirectory of status and habits
+status/**/__pycache__/
+habits/**/__pycache__/

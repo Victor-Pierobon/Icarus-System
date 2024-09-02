@@ -5,6 +5,8 @@ def main(page: ft.Page):
     page.title = "Create New Player"
     page.padding = ft.padding.all(20)
 
+
+
     player_name_input = ft.TextField(label="Player Name")
 
     def create_player(e):
@@ -22,6 +24,7 @@ def main(page: ft.Page):
     page.add(
         ft.Column(
             [
+                ft.Text(f"Welcome new player! \n Whats your name?", size = 20,color="#4c7df7", ),
                 player_name_input,
                 ft.ElevatedButton("Create Player", on_click=create_player),
             ]

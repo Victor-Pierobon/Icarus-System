@@ -1,5 +1,12 @@
 import flet as ft
-import player
+import player_controls as player
+import sys
+sys.path.append('../')
+#discover how to make this f* shit work
+from global_components.menu import MyMenu
+
+
+
 
 def main(page: ft.Page):
     page.title = "Player Status"
@@ -39,6 +46,7 @@ def main(page: ft.Page):
                 page.update()
 
     page.add(
+        MyMenu(),
         player_name,
         ft.ElevatedButton("Show Player Info", on_click=display_player_info)
     )
